@@ -6,8 +6,8 @@ require('dotenv').config();
 const client = new Discord.Client();
 const prefix = '/';
 
-const supportChannelIds = ['YourSupportChannelId1'];
-const adminRoleId = 'YourAdminRoleId';
+const supportChannelIds = ['1181064765150334986'];
+const adminRoleId = '1154760681883705385';
 const projectFilePath = './json/project.json';
 const spoilerFilePath = './json/spoiler.json';
 const openaiReverseProxyEndpoint = process.env.OPENAI_API_KEY;
