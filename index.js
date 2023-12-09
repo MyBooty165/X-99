@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const fs = require('fs');
 const axios = require('axios');
+require('dotenv').config();
 
 const client = new Discord.Client();
 const prefix = '/';
@@ -9,7 +10,7 @@ const supportChannelIds = ['YourSupportChannelId1'];
 const adminRoleId = 'YourAdminRoleId';
 const projectFilePath = './json/project.json';
 const spoilerFilePath = './json/spoiler.json';
-const openaiReverseProxyEndpoint = 'YourOpenAIReverseProxyEndpoint';
+const openaiReverseProxyEndpoint = process.env.OPENAI_API_KEY;
 
 client.on('message', async (message) => {
     if (!message.content.startsWith(prefix) || message.author.bot) return;
@@ -36,17 +37,39 @@ client.on('message', async (message) => {
 
         message.author.send('Your support message has been sent successfully.');
     } else if (command === 'ban' && message.member.roles.cache.has(adminRoleId)) {
-        const banTarget = message.mentions.users.first() || client.users.cache.get(args[0]);
-        if (!banTarget) return message.reply('Please mention a user or provide their ID.');
+        const subCommand = args.shift().toLowerCase();
 
-        const bannedUsers = JSON.parse(fs.readFileSync('./json/bannedUsers.json', 'utf8'));
+        if (subCommand === 'add') {
+            const banTarget = message.mentions.users.first() || client.users.cache.get(args[0]);
+            if (!banTarget) return message.reply('Please mention a user or provide their ID.');
 
-        if (!bannedUsers.includes(banTarget.id)) {
-            bannedUsers.push(banTarget.id);
-            fs.writeFileSync('./json/bannedUsers.json', JSON.stringify(bannedUsers, null, 2));
-            message.reply(`User ${banTarget.tag} has been banned from using support.`);
+            const bannedUsers = JSON.parse(fs.readFileSync('./json/bannedUsers.json', 'utf8'));
+
+            if (!bannedUsers.includes(banTarget.id)) {
+                bannedUsers.push(banTarget.id);
+                fs.writeFileSync('./json/bannedUsers.json', JSON.stringify(bannedUsers, null, 2));
+                message.reply(`User ${banTarget.tag} has been banned from using support.`);
+            } else {
+                message.reply('This user is already banned.');
+            }
+        } else if (subCommand === 'unban') {
+            const unbanTarget = message.mentions.users.first() || client.users.cache.get(args[0]);
+            if (!unbanTarget) return message.reply('Please mention a user or provide their ID.');
+
+            const bannedUsers = JSON.parse(fs.readFileSync('./json/bannedUsers.json', 'utf8'));
+
+            if (bannedUsers.includes(unbanTarget.id)) {
+                const updatedBannedUsers = bannedUsers.filter((userId) => userId !== unbanTarget.id);
+                fs.writeFileSync('./json/bannedUsers.json', JSON.stringify(updatedBannedUsers, null, 2));
+                message.reply(`User ${unbanTarget.tag} has been unbanned from support.`);
+            } else {
+                message.reply('This user is not currently banned.');
+            }
+        } else if (subCommand === 'list') {
+            const bannedUsers = JSON.parse(fs.readFileSync('./json/bannedUsers.json', 'utf8'));
+            message.channel.send('Banned Users: \n' + JSON.stringify(bannedUsers, null, 2));
         } else {
-            message.reply('This user is already banned.');
+            message.reply('Invalid sub-command. Use `/ban add`, `/ban unban`, or `/ban list`.');
         }
     } else if (command === 'projects') {
         const projectData = fs.readFileSync(projectFilePath, 'utf8');
